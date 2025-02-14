@@ -66,13 +66,7 @@ class SnakeEnv(Env):
             done = True
             self.reset()
         else:
-            
-            if(compute_distance(self.agent[0], self.target) < compute_distance(destination, self.target)):
-                # print("current < target: agent, target, destination ",self.agent[0], self.target, destination)
-                reward = -0.01
-            else:
-                # print("current >= target: agent, target, destination ",self.agent[0], self.target, destination)
-                reward = -0.01  # Small penalty for each move
+            reward = -0.01  # Small penalty for each move
             done = False
         self.agent, self.target= move(self.grid_size, self.agent, destination, self.target)
         self.state = np.concatenate((self.agent[0], self.target))

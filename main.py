@@ -12,33 +12,34 @@ gym.envs.registration.register(id='Snake-v0', entry_point=SnakeEnv)
 
 
 
-#### Training
+#### 1. Training
 
 
-# log_path = r".\logs\saved_models\snakeRL_6_200K_DQN.zip"
+log_path = r".\logs"
 
-# make a snake Environment game
-# environment_name = "Snake-v0"
-# env = gym.make(environment_name, render_mode="None")
-
-
-# model = PPO("MlpPolicy", env, verbose=1,  # Reduce random actions
-#            learning_rate=0.001) #, tensorboard_log= log_path)
-
-# # train the agent
-# model.learn(total_timesteps=10_000)
-
-# # save the trained model
-# model.save(r".\logs\saved_models\snakeRL_2_100K_PPO.zip")
-
-# Testing and Evaluation
-
-
-# make a snake Environment game
+# # make a snake Environment game
 environment_name = "Snake-v0"
-env = gym.make(environment_name, render_mode="human")
+env_ = gym.make(environment_name)
 
-model = PPO.load(r".\logs\saved_models\snakeRL_1_100K_PPO.zip")
+
+model = PPO("MlpPolicy", env_, verbose=1,  # Reduce random actions
+           learning_rate=0.001, tensorboard_log= log_path)
+
+# train the agent
+model.learn(total_timesteps=1_000)
+
+# save the trained model
+model.save(r".\logs\saved_models\snakeRL_2_200K_PPO.zip")
+
+
+
+# 2. Testing and Evaluation
+
+
+# define a snake Environment game
+env = gym.make(environment_name, render_mode = "human")
+
+model = PPO.load(r".\logs\saved_models\snakeRL_2_200K_PPO.zip")
 episods = 5
 
 for i in range(1, episods+1):
@@ -50,7 +51,7 @@ for i in range(1, episods+1):
 
   while not done:
     env.render()
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     action, _= model.predict(obs)  # were are now using model
     obs, reward, done, info,_= env.step(action)
@@ -58,8 +59,14 @@ for i in range(1, episods+1):
   print("Episods: {}, Score: {}".format(episods, score))
 env.close()
 
-# mean_reward, std_reward =evaluate_policy(model, env, n_eval_episodes=10)
-# print("mean_reward, std_reward: ", mean_reward, std_reward)
+
+
+# 3. Policy Evaluation
+
+model = PPO.load(r".\logs\saved_models\snakeRL_2_200K_PPO.zip")
+
+mean_reward, std_reward =evaluate_policy(model, env_, n_eval_episodes=10)
+print("mean_reward, std_reward: ", mean_reward, std_reward)
 
 
 
