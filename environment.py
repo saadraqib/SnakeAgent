@@ -2,7 +2,7 @@ import gymnasium as gym
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete, Dict, Tuple, MultiBinary, MultiDiscrete
 import numpy as np
-
+import pygame
 
 
 import config
@@ -12,26 +12,34 @@ import copy
 
 
 class SnakeEnv(Env):
-    def __init__(self):
+    metadata = {"render_modes": ["human"], "render_fps": 10}
+
+    def __init__(self, render_mode = None, show_game_over=False):
         super().__init__()
 
         # action space left right top bottom
         self.action_space = Discrete(4)
 
-        self.grid_size = 15
+        self.grid_size = 20
         
         # observation space
-        self.observation_space = Box(low=1,
-                                    high= self.grid_size,#np.array([self.grid_size, self.grid_size, self.grid_size, self.grid_size]),
+        self.observation_space = Box(low=0,
+                                    high= self.grid_size-1,#np.array([self.grid_size, self.grid_size, self.grid_size, self.grid_size]),
                                     shape=(4,),
                                     dtype=np.int32)
 
         self.reset()
+        self.render_mode = render_mode
+        if render_mode == "human":
+            pygame.init()
+            self.window_size = 450  # Window size
+            self.block_size = self.window_size // self.grid_size
+            self.screen = pygame.display.set_mode((self.window_size, self.window_size))
 
     def reset(self, seed = None, options=None):
         super().reset(seed=seed)
 
-        self.board = board(self.grid_size, self.grid_size)
+       
 
         self.agent = copy.deepcopy(config.snake)
         self.target = copy.deepcopy(config.target)
@@ -51,33 +59,33 @@ class SnakeEnv(Env):
         
         # Reward Computing
         if destination == self.target:
-            reward = 5 # Reached goal
+            reward = 1 # Reached goal
             done = False
-        elif game_over(self.board, destination[0], destination[1]):
-            reward = -10 # Fell into pit
+        elif game_over(self.grid_size, destination[0], destination[1], self.agent):
+            reward = -1 # Fell into pit
             done = True
             self.reset()
         else:
             
-            if(compute_distance(self.agent[0], self.target)< compute_distance(destination, self.target)):
+            if(compute_distance(self.agent[0], self.target) < compute_distance(destination, self.target)):
                 # print("current < target: agent, target, destination ",self.agent[0], self.target, destination)
-                reward = -1
+                reward = -0.01
             else:
                 # print("current >= target: agent, target, destination ",self.agent[0], self.target, destination)
-                reward = 1  # Small penalty for each move
+                reward = -0.01  # Small penalty for each move
             done = False
-        self.board, self.agent, self.target= move(self.board, self.agent, destination, self.target)
+        self.agent, self.target= move(self.grid_size, self.agent, destination, self.target)
         self.state = np.concatenate((self.agent[0], self.target))
 
         return self.state, reward, done, False, {}
        
     def render(self):
-        show(self.board, self.agent)
+        display(self.agent, self.target, self.block_size, self.screen)
         
     
     def __agent_destination(self, direction):
         # computing next position of the agent on the map and calculating destination row and col
-        agent_pos = self.agent[0]
+        agent_pos = copy.deepcopy(self.agent[0])
 
         agent_pos[0] = compute_destination(agent_pos[0], 
                                             config.direction[direction][0])
